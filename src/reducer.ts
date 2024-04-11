@@ -1,60 +1,122 @@
-type state = {
+import { itemList } from "./Items"
+
+export type reducerState = {
     money: number,
     sum: number,
-    remainder: number,
     items: Item[],
-    window: "main" | "buy"
+    descriptionItem: Item | null,
+    window: "main" | "buy" | "sell"
 }
 
-type itemAction = {
-    type: "increment_single" | "decrement_single"
-    payload: string
+export const initialState: reducerState = {
+    money: 5000,
+    sum: 0,
+    items: itemList,
+    descriptionItem: null,
+    window: "main"
 }
 
-type generalAction = {
-    type: "open_buy" | "checkout" | "checkout" | "close"
+export type itemAction = {
+    type: "increment_single" | "decrement_single" | "increment_ten" | "decrement_ten" | "update_description"
+    payload: Item
 }
 
-type action = itemAction | generalAction
+export type generalAction = {
+    type: "open_buy" | "open_sell" | "checkout_buy" | "checkout_sell" | "close"
+}
 
-export const reducer = (state: state, action: action): state => {
+export type action = itemAction | generalAction
+
+export const reducer = (state: reducerState, action: action): reducerState => {
     switch(action.type){
         case "open_buy":
-            state = {...state, window: "buy"}
-            return state
-        case "close":
-            state = {...state, window: "main"}
-            return state
-        case "checkout":
-            if(state.remainder < 0){
+            return {...state, window: "buy"}
+        case "open_sell": 
+            return {...state, window: "sell"}
+        case "close":{
+            const newList = state.items.map(item => {
+                return {...item, shopAmount: 0}
+            })
+            return {...state, window: "main", items: newList, sum: 0 }
+        }
+        case "checkout_buy":{
+            if(state.money - state.sum < 0){
                 alert("Not enough money!")
                 return state
             }
-            state.items.forEach(item => {
-                item.inventoryAmount += item.shopAmount
-                item.shopAmount = 0
+            const newList = state.items.map(item => {
+                return {...item, inventoryAmount: item.inventoryAmount + item.shopAmount, shopAmount: 0}
             })
-            state = {
+            return {
                 ...state, 
-                window: "main"
+                window: "main",
+                items: newList,
+                money: state.money - state.sum,
+                sum: 0
             }
-            return state
+        }
+        case "checkout_sell":{
+            const newList = state.items.map(item => {
+                return {...item, inventoryAmount: item.inventoryAmount - item.shopAmount, shopAmount: 0}
+            })
+            return {
+                ...state, 
+                window: "main",
+                items: newList,
+                money: state.money + state.sum,
+                sum: 0
+            }
+        }
         case "increment_single": {
-            state.items.find(i => i.name === action.payload)!.shopAmount++
+            const target = state.items.find(i => i.name === action.payload.name)!
+            const newList = state.items.map(i => {
+                if(i.name != target.name)
+                    return i
+                return {...i, shopAmount: state.window === "buy" ? i.shopAmount + 1 : Math.min(i.shopAmount + 1, i.inventoryAmount)}
+            })
             let newSum = 0
-            state.items.forEach(item => newSum += item.shopAmount * item.price)
-            state = {...state, sum: newSum}
-            return state
+            newList.forEach(item => {
+                newSum += item.shopAmount * item.price
+            })
+            return {...state, sum: newSum, items: newList}
+        }
+        case "increment_ten": {
+            const target = state.items.find(i => i.name === action.payload.name)!
+            const newList = state.items.map(i => {
+                if(i.name != target.name)
+                    return i
+                return {...i, shopAmount: state.window === "buy" ? i.shopAmount + 10 : Math.min(i.shopAmount + 10, i.inventoryAmount)}
+            })
+            let newSum = 0
+            newList.forEach(item => {
+                newSum += item.shopAmount * item.price
+            })
+            return {...state, sum: newSum, items: newList}
         }
         case "decrement_single": {
-            const item = state.items.find(i => i.name === action.payload)!
-            item.shopAmount--
-            if(item.shopAmount < 0)
-            item.shopAmount = 0
+            const target = state.items.find(i => i.name === action.payload.name)!
+            const newList = state.items.map(i => {
+                if(i.name != target.name)
+                    return i
+                return {...i, shopAmount: i.shopAmount === 0 ? 0 : i.shopAmount - 1}
+            })
             let newSum = 0
-            state.items.forEach(item => newSum += item.shopAmount * item.price)
-            state = {...state, sum: newSum}
-            return state
+            newList.forEach(item => newSum += item.shopAmount * item.price)
+            return {...state, sum: newSum, items: newList}
+        }
+        case "decrement_ten": {
+            const target = state.items.find(i => i.name === action.payload.name)!
+            const newList = state.items.map(i => {
+                if(i.name != target.name)
+                    return i
+                return {...i, shopAmount: Math.max(0, i.shopAmount - 10)}
+            })
+            let newSum = 0
+            newList.forEach(item => newSum += item.shopAmount * item.price)
+            return {...state, sum: newSum, items: newList}
+        }
+        case "update_description": {
+            return {...state, descriptionItem: action.payload}
         }
         default:
             const err: never = action
