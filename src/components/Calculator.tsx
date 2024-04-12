@@ -14,10 +14,10 @@ const Calculator = () => {
             <p className={lineClasses + `text-2xl text-white`}>{window === "buy" ? money - sum : money + sum}</p>
             <button 
                 className='my-2 py-2 px-3 w-full bg-rose-500 rounded disabled:bg-rose-950 disabled:text-rose-700'
-                disabled={money < sum}
+                disabled={money < sum && window === "buy"}
                 onClick={() => dispatch({type: "checkout_buy"})}
             >
-                {money < sum ? "Impossible" : "Checkout"}
+                {money < sum && window === "buy" ? "Impossible" : "Checkout"}
             </button>
         </div>
     </div>

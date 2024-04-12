@@ -7,7 +7,7 @@ import Body from './components/Body'
 
 function App() {
   const [state, dispatch] = useReducer(reducer, initialState)
-  
+  document.title = "Item Shop"
   return (
     <AppContext.Provider value={{state, dispatch}}>
       <div className='h-screen'>
