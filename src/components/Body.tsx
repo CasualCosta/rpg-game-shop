@@ -1,10 +1,10 @@
-import React, { useContext } from 'react'
+import { useContext } from 'react'
 import { AppContext } from '../context'
 import MainMenu from './MainMenu'
 import BuyWindow from './BuyWindow'
 
 const Body = () => {
-    const {state, dispatch} = useContext(AppContext)
+    const {state} = useContext(AppContext)
     if(state.window === "main"){
         return <MainMenu />
     }
